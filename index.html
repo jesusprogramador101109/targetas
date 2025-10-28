@@ -1,0 +1,701 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>NexoWeb - Tienda de Plantillas & Dedicatorias (Jesús)</title>
+<style>
+  :root{
+    --bg-dark:#0f172a; --bg-mid:#111827;
+    --glass: rgba(255,255,255,0.04);
+    --card: rgba(255,255,255,0.06);
+    --muted:#94a3b8; --text:#e6eef8;
+    --accent:#10b981; --danger:#ef4444;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,system-ui,Arial;color:var(--text);background:linear-gradient(180deg,var(--bg-dark),var(--bg-mid));min-height:100vh;padding:20px}
+  .container{max-width:1150px;margin:0 auto}
+  header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 14px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));}
+  .brand{display:flex;gap:12px;align-items:center}
+  .logo{width:52px;height:52px;border-radius:10px;background:var(--glass);display:flex;align-items:center;justify-content:center;font-weight:800}
+  nav{display:flex;gap:10px;align-items:center}
+  nav button{background:transparent;border:0;color:var(--text);padding:8px 10px;border-radius:8px;cursor:pointer}
+  nav button.active{background:rgba(255,255,255,0.02);color:var(--accent);font-weight:700}
+  main{margin-top:18px}
+  .grid{display:grid;gap:14px}
+  .grid-3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+  .card{background:var(--card);padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.03)}
+  h2{font-size:20px;margin-bottom:8px}
+  p.small{color:var(--muted);font-size:14px}
+  .price{font-weight:800}
+  .btn{background:var(--accent);color:#062012;border:0;padding:10px 12px;border-radius:10px;cursor:pointer;font-weight:700}
+  .btn-ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--text);padding:9px;border-radius:10px}
+  .btn-danger{background:var(--danger);color:white;border-radius:8px;padding:8px 10px;border:0;cursor:pointer}
+  input,textarea,select{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--text);padding:10px;border-radius:8px;width:100%}
+  textarea{min-height:100px;resize:vertical}
+  .right-col{display:flex;flex-direction:column;gap:12px}
+  .flex{display:flex;gap:10px;align-items:center}
+  .muted{color:var(--muted)}
+  footer{margin-top:18px;color:var(--muted);text-align:center;padding:14px}
+
+  /* Cart panel */
+  #cartPanel{position:fixed;right:18px;top:84px;width:360px;background:linear-gradient(180deg, rgba(17,24,39,0.96), rgba(15,23,42,0.98));border-radius:12px;padding:12px;border:1px solid rgba(255,255,255,0.03);display:none;z-index:80}
+  .cart-item{display:flex;justify-content:space-between;align-items:center;padding:8px;border-radius:8px;background:rgba(255,255,255,0.02);margin-bottom:8px}
+  .cart-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:8px}
+
+  /* modal */
+  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:90}
+  .modal{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));padding:18px;border-radius:12px;width:100%;max-width:520px}
+  .modal h3{margin-bottom:8px}
+
+  /* tabs content layout */
+  .tabs-content{margin-top:14px;display:grid;grid-template-columns:1fr 380px;gap:14px}
+  @media(max-width:980px){.tabs-content{grid-template-columns:1fr;padding:0}.right-col{order:2}.tabs-content .left{order:1}}
+
+  /* orders list */
+  .order{background:rgba(255,255,255,0.02);padding:10px;border-radius:8px;margin-bottom:8px}
+
+  /* small */
+  .tiny{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="brand">
+      <div class="logo">NW</div>
+      <div>
+        <div style="font-weight:800">NexoWeb</div>
+        <div class="tiny">Tienda de plantillas y dedicatorias — by Jesús</div>
+      </div>
+    </div>
+
+    <nav id="topNav">
+      <button data-tab="store" class="active">Tienda</button>
+      <button data-tab="carta">Carta</button>
+      <button data-tab="galeria">Galería</button>
+      <button data-tab="orders">Pedidos</button>
+      <button id="btnCart" style="margin-left:6px">🛒 Carrito <span id="cartCount" style="margin-left:6px;color:var(--accent)"></span></button>
+    </nav>
+  </header>
+
+  <main>
+    <div class="tabs-content">
+
+      <!-- LEFT: main panel (switchable) -->
+      <div class="left">
+
+        <!-- STORE TAB -->
+        <section id="tab-store" class="card tab-panel">
+          <h2>Tienda — Plantillas & Productos</h2>
+          <p class="small">Compra plantillas de dedicatorias, packs de imágenes o servicios extras. Añade al carrito y procede al pago.</p>
+
+          <div style="margin-top:12px" class="grid grid-3" id="productsGrid">
+            <!-- products rendered by JS -->
+          </div>
+        </section>
+
+        <!-- CART quick / fallback -->
+        <section id="tab-cart" class="card tab-panel" style="display:none;margin-top:12px">
+          <h2>Carrito</h2>
+          <div id="cartMainList"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+            <div class="tiny">Total: S/ <span id="cartMainTotal">0</span></div>
+            <div>
+              <button class="btn-ghost" id="cartMainClose">Seguir comprando</button>
+              <button class="btn" id="cartMainCheckout">Pagar</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- CART TAB (Carta editing & preview) -->
+        <section id="tab-carta" class="card tab-panel" style="display:none">
+          <h2>Editor de Carta — usa plantillas</h2>
+          <p class="small">Selecciona una plantilla en la columna derecha y personaliza el mensaje. Puedes aplicar la plantilla a la carta y guardarla.</p>
+
+          <div style="margin-top:12px;display:grid;grid-template-columns:1fr;gap:10px">
+            <div class="card">
+              <div style="display:flex;justify-content:space-between;gap:12px">
+                <div style="flex:1">
+                  <label class="tiny">Título</label>
+                  <input id="c_title" placeholder="Ej: Para mi amor"/>
+                </div>
+                <div style="width:140px">
+                  <label class="tiny">Tipo</label>
+                  <select id="c_type">
+                    <option value="romantica">Romántica</option>
+                    <option value="amistad">Amistad</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="margin-top:10px">
+                <label class="tiny">Mensaje</label>
+                <textarea id="c_msg" placeholder="Escribe aquí tu dedicatoria..."></textarea>
+              </div>
+
+              <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end">
+                <button class="btn-ghost" id="c_reset">Restablecer</button>
+                <button class="btn" id="c_apply">Aplicar a carta</button>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Previsualización</h3>
+              <div id="cardPreview" style="margin-top:8px;padding:12px;border-radius:10px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01))">
+                <!-- preview content -->
+                <div id="previewTitle" style="font-weight:800;font-size:18px">Para ti</div>
+                <div id="previewMsg" class="tiny" style="margin-top:6px;color:var(--muted)">Tu mensaje aparecerá aquí...</div>
+                <div style="text-align:right;margin-top:12px;color:var(--muted)">— Jesús</div>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end">
+                <button class="btn-ghost" id="previewToGallery">Guardar en Galería</button>
+                <button class="btn" id="previewDownload">Descargar</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- GALERIA TAB -->
+        <section id="tab-galeria" class="card tab-panel" style="display:none">
+          <h2>Galería de Dedicatorias</h2>
+          <p class="small">Dedicatorias guardadas. Puedes compartirlas o eliminarlas.</p>
+          <div id="galleryGrid" style="margin-top:12px" class="grid grid-3"></div>
+        </section>
+
+        <!-- ORDERS TAB -->
+        <section id="tab-orders" class="card tab-panel" style="display:none">
+          <h2>Pedidos</h2>
+          <p class="small">Historial de compras (guardado localmente en este navegador)</p>
+          <div id="ordersList" style="margin-top:12px"></div>
+        </section>
+
+      </div>
+
+      <!-- RIGHT: column with templates, cart summary and quick actions -->
+      <aside class="right-col">
+        <div class="card">
+          <h3>Tus Plantillas</h3>
+          <p class="tiny">Plantillas listas para usar: aplica una a la carta o agrégala al carrito como producto.</p>
+          <div id="templatesList" style="display:grid;gap:8px;margin-top:10px"></div>
+        </div>
+
+        <div class="card">
+          <h3>Resumen del carrito</h3>
+          <div id="miniCart" style="min-height:40px"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+            <div class="tiny">Total: S/ <span id="miniTotal">0</span></div>
+            <div>
+              <button class="btn-ghost" id="miniView">Ver</button>
+              <button class="btn" id="miniCheckout">Pagar</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Acciones</h3>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button class="btn" id="newTemplateBtn">Crear dedicatoria rápida</button>
+            <button class="btn-ghost" id="openGalleryBtn">Abrir galería</button>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </main>
+
+  <footer>© <span id="yearFoot"></span> NexoWeb by Jesús — Tienda & Dedicatorias</footer>
+</div>
+
+<!-- CART PANEL (floating) -->
+<div id="cartPanel">
+  <h4 style="margin:0 0 8px 0">🛒 Carrito</h4>
+  <div id="cartItems"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
+    <div><small class="tiny">Total</small><div style="font-weight:800">S/ <span id="cartTotal">0</span></div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-ghost" id="cartPanelClose">Cerrar</button>
+      <button class="btn" id="cartPanelCheckout">Pagar</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAYMENT MODAL -->
+<div id="paymentBackdrop" class="backdrop">
+  <div class="modal">
+    <h3>Confirmar pago (simulado)</h3>
+    <p class="tiny">Introduce los datos de la tarjeta — esto es una simulación, no se procesa realmente.</p>
+
+    <div style="margin-top:8px">
+      <label class="tiny">Nombre en la tarjeta</label>
+      <input id="pay_name" placeholder="Nombre completo"/>
+      <label class="tiny" style="margin-top:8px">Número de tarjeta</label>
+      <input id="pay_number" placeholder="XXXX XXXX XXXX XXXX" maxlength="19"/>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <div style="flex:1">
+          <label class="tiny">MM/AA</label>
+          <input id="pay_exp" placeholder="MM/AA" maxlength="5"/>
+        </div>
+        <div style="width:110px">
+          <label class="tiny">CVV</label>
+          <input id="pay_cvv" placeholder="123" maxlength="4"/>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button class="btn-ghost" id="payCancel">Cancelar</button>
+        <button class="btn" id="payConfirm">Confirmar pago</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ORDER CONFIRMATION MODAL -->
+<div id="orderBackdrop" class="backdrop">
+  <div class="modal">
+    <h3>Pedido recibido</h3>
+    <p id="orderMsg" class="tiny">Gracias por tu compra. Tu pedido ha sido guardado localmente.</p>
+    <div style="display:flex;justify-content:flex-end;margin-top:12px">
+      <button class="btn" id="orderOk">OK</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* -------------------------
+   Data: products & templates
+   ------------------------- */
+const PRODUCTS = [
+  { id: 'tpl-rom-1', title: 'Plantilla Romántica - Rosa', price: 35, type:'plantilla', templateId:'rom-1' },
+  { id: 'tpl-rom-2', title: 'Plantilla Romántica - Corazón', price: 45, type:'plantilla', templateId:'rom-2' },
+  { id: 'tpl-ami-1', title: 'Plantilla Amistad - Minimal', price: 30, type:'plantilla', templateId:'ami-1' },
+  { id: 'img-pack-1', title: 'Pack imágenes (10)', price: 25, type:'producto' },
+  { id: 'service-1', title: 'Edición personalizada', price: 120, type:'servicio' }
+];
+
+const TEMPLATES = {
+  'rom-1': { name:'Romántica - Rosa', previewTitle:'Para mi amor', previewMsg:'Cada latido me recuerda a ti. Te amo.' },
+  'rom-2': { name:'Romántica - Corazón', previewTitle:'Mi corazón', previewMsg:'Eres mi lugar favorito en el mundo.' },
+  'ami-1': { name:'Amistad - Minimal', previewTitle:'A mi amigo/a', previewMsg:'Gracias por estar siempre a mi lado.' }
+};
+
+/* -------------------------
+   App State
+   ------------------------- */
+let cart = []; // {id,title,price,qty}
+let orders = JSON.parse(localStorage.getItem('nexo_orders') || '[]');
+let gallery = JSON.parse(localStorage.getItem('nexo_gallery') || '[]');
+
+/* -------------------------
+   Elements
+   ------------------------- */
+const productsGrid = document.getElementById('productsGrid');
+const templatesList = document.getElementById('templatesList');
+const cartPanel = document.getElementById('cartPanel');
+const cartItemsEl = document.getElementById('cartItems');
+const cartTotalEl = document.getElementById('cartTotal');
+const cartCount = document.getElementById('cartCount');
+const miniCart = document.getElementById('miniCart');
+const miniTotal = document.getElementById('miniTotal');
+const cartMainList = document.getElementById('cartMainList');
+const cartMainTotal = document.getElementById('cartMainTotal');
+const galleryGrid = document.getElementById('galleryGrid');
+const ordersList = document.getElementById('ordersList');
+const templatesContainer = templatesList;
+
+/* init year */
+document.getElementById('yearFoot').textContent = new Date().getFullYear();
+
+/* -------------------------
+   Render functions
+   ------------------------- */
+function renderProducts(){
+  productsGrid.innerHTML = '';
+  for(const p of PRODUCTS){
+    const d = document.createElement('div'); d.className='card';
+    d.innerHTML = `
+      <div>
+        <div style="font-weight:800">${p.title}</div>
+        <div class="tiny" style="margin-top:6px">${p.type === 'plantilla' ? 'Plantilla de carta' : (p.type==='servicio'?'Servicio':'Producto')}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;justify-content:space-between;margin-top:12px">
+        <div>
+          <div class="price">S/ ${formatSoles(p.price)}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn" onclick="addToCart('${p.id}')">Agregar</button>
+          ${p.type==='plantilla' ? `<button class="btn-ghost" onclick="applyTemplate('${p.templateId}')">Usar plantilla</button>` : ''}
+        </div>
+      </div>
+    `;
+    productsGrid.appendChild(d);
+  }
+}
+
+function renderTemplates(){
+  templatesContainer.innerHTML = '';
+  for(const key in TEMPLATES){
+    const t = TEMPLATES[key];
+    const el = document.createElement('div'); el.className='tiny card';
+    el.style.display = 'flex'; el.style.justifyContent='space-between'; el.style.alignItems='center';
+    el.innerHTML = `<div><strong>${t.name}</strong><div class="muted" style="margin-top:6px">${t.previewMsg.slice(0,60)}${t.previewMsg.length>60?'...':''}</div></div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button class="btn-ghost" onclick="applyTemplate('${key}')">Previsualizar</button>
+        <button class="btn" onclick="addTemplateProduct('${key}')">Comprar plantilla</button>
+      </div>`;
+    templatesContainer.appendChild(el);
+  }
+}
+
+function renderMiniCart(){
+  miniCart.innerHTML = '';
+  let tot=0;
+  if(cart.length===0){ miniCart.innerHTML = '<div class="tiny muted">Carrito vacío</div>'; miniTotal.textContent = '0'; return; }
+  for(const it of cart){
+    tot += it.price*it.qty;
+    const r = document.createElement('div'); r.className='tiny';
+    r.style.display='flex'; r.style.justifyContent='space-between'; r.style.marginBottom='6px';
+    r.innerHTML = `<div>${it.title} x${it.qty}</div><div>S/ ${formatSoles(it.price*it.qty)}</div>`;
+    miniCart.appendChild(r);
+  }
+  miniTotal.textContent = formatSoles(tot);
+}
+
+function renderCartPanel(){
+  cartItemsEl.innerHTML = '';
+  let tot = 0;
+  if(cart.length===0){
+    cartItemsEl.innerHTML = '<div class="tiny muted">Tu carrito está vacío.</div>';
+  } else {
+    for(const it of cart){
+      tot += it.price*it.qty;
+      const div = document.createElement('div'); div.className='cart-item';
+      div.innerHTML = `<div><div style="font-weight:700">${it.title}</div><div class="tiny">S/ ${formatSoles(it.price)} · x${it.qty}</div></div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <button class="btn-ghost" onclick="changeQty('${it.id}', -1)">-</button>
+          <button class="btn-ghost" onclick="changeQty('${it.id}', 1)">+</button>
+          <button class="btn-danger" onclick="removeFromCart('${it.id}')">Eliminar</button>
+        </div>`;
+      cartItemsEl.appendChild(div);
+    }
+  }
+  cartTotalEl.textContent = formatSoles(tot);
+  cartCount.textContent = cart.reduce((s,i)=>s+i.qty,0) || '';
+  renderMiniCart();
+}
+
+function renderCartMain(){
+  cartMainList.innerHTML = '';
+  let tot=0;
+  if(cart.length===0){
+    cartMainList.innerHTML = '<div class="tiny muted">Carrito vacío</div>';
+  } else {
+    for(const it of cart){
+      tot += it.price*it.qty;
+      const row = document.createElement('div'); row.className='tiny card';
+      row.style.display='flex'; row.style.justifyContent='space-between'; row.style.alignItems='center'; row.style.marginBottom='8px';
+      row.innerHTML = `<div><strong>${it.title}</strong><div class="muted">S/ ${formatSoles(it.price)} · x${it.qty}</div></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-ghost" onclick="changeQty('${it.id}', -1)">-</button>
+          <button class="btn-ghost" onclick="changeQty('${it.id}', 1)">+</button>
+          <button class="btn-danger" onclick="removeFromCart('${it.id}')">Eliminar</button>
+        </div>`;
+      cartMainList.appendChild(row);
+    }
+  }
+  cartMainTotal.textContent = formatSoles(tot);
+}
+
+function renderGallery(){
+  galleryGrid.innerHTML = '';
+  if(gallery.length===0){ galleryGrid.innerHTML = '<div class="tiny muted">No hay dedicatorias guardadas.</div>'; return; }
+  for(let i=gallery.length-1;i>=0;i--){
+    const it = gallery[i];
+    const card = document.createElement('div'); card.className='card';
+    card.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
+      <div><strong>${it.title || 'Para ti'}</strong><div class="tiny muted">${it.type} · ${new Date(it.t).toLocaleString()}</div></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-ghost" onclick="shareItem(${i})">Compartir</button>
+        <button class="btn-danger" onclick="deleteGallery(${i})">Eliminar</button>
+      </div>
+    </div>
+    <p style="margin-top:10px" class="tiny">${escapeHtml(it.msg)}</p>`;
+    galleryGrid.appendChild(card);
+  }
+}
+
+function renderOrders(){
+  ordersList.innerHTML = '';
+  if(orders.length===0){ ordersList.innerHTML = '<div class="tiny muted">No hay pedidos aún.</div>'; return; }
+  for(let i=orders.length-1;i>=0;i--){
+    const o = orders[i];
+    const el = document.createElement('div'); el.className='order';
+    el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center">
+      <div><strong>Pedido #${o.id}</strong><div class="tiny muted">${new Date(o.t).toLocaleString()}</div></div>
+      <div style="text-align:right">S/ ${formatSoles(o.total)}<div class="tiny">${o.items.length} artículo(s)</div></div>
+    </div>
+    <div style="margin-top:8px" class="tiny">Nombre: ${escapeHtml(o.payer_name || '—')}</div>`;
+    ordersList.appendChild(el);
+  }
+}
+
+/* -------------------------
+   Utility helpers
+   ------------------------- */
+function formatSoles(n){ return Number(n).toLocaleString('es-PE'); }
+function escapeHtml(s){ return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+/* -------------------------
+   Cart operations
+   ------------------------- */
+function addToCart(productId){
+  const p = PRODUCTS.find(x=>x.id===productId);
+  if(!p) return;
+  const ex = cart.find(c=>c.id===p.id);
+  if(ex) ex.qty++;
+  else cart.push({ id:p.id, title:p.title, price:p.price, qty:1 });
+  renderCartPanel(); renderCartMain();
+  openCartPanel();
+}
+
+function addTemplateProduct(templateKey){
+  // find product by template mapping
+  const prod = PRODUCTS.find(x=>x.templateId===templateKey);
+  if(prod) addToCart(prod.id);
+  else {
+    // create a temporary product
+    const t = TEMPLATES[templateKey];
+    const tempId = 'tpl-buy-' + templateKey;
+    cart.push({ id: tempId, title: `Plantilla: ${t.name}`, price: 40, qty:1 });
+    renderCartPanel(); renderCartMain();
+    openCartPanel();
+  }
+}
+
+function changeQty(id, delta){
+  const it = cart.find(c=>c.id===id);
+  if(!it) return;
+  it.qty = Math.max(1, it.qty + delta);
+  renderCartPanel(); renderCartMain();
+}
+
+function removeFromCart(id){
+  cart = cart.filter(c=>c.id!==id);
+  renderCartPanel(); renderCartMain();
+}
+
+function clearCart(){
+  cart = [];
+  renderCartPanel(); renderCartMain();
+}
+
+/* -------------------------
+   Template apply & editor
+   ------------------------- */
+const previewTitle = document.getElementById('previewTitle');
+const previewMsg = document.getElementById('previewMsg');
+function applyTemplate(key){
+  const t = TEMPLATES[key];
+  if(!t) return;
+  // set editor fields
+  document.getElementById('c_title').value = t.previewTitle;
+  document.getElementById('c_msg').value = t.previewMsg;
+  document.getElementById('c_type').value = key.startsWith('rom') ? 'romantica' : 'amistad';
+  document.getElementById('c_apply').click(); // apply immediately
+  showTiny('Plantilla aplicada al editor');
+}
+
+/* -------------------------
+   Gallery operations
+   ------------------------- */
+function savePreviewToGallery(){
+  const title = document.getElementById('c_title').value.trim() || 'Para ti';
+  const msg = document.getElementById('c_msg').value.trim() || '';
+  const type = document.getElementById('c_type').value || 'romantica';
+  if(!msg){ showTiny('Escribe un mensaje antes de guardar'); return; }
+  gallery.push({ title, msg, type, t: Date.now() });
+  localStorage.setItem('nexo_gallery', JSON.stringify(gallery));
+  renderGallery();
+  showTiny('Dedicatoria guardada en galería');
+}
+
+/* -------------------------
+   Orders & checkout
+   ------------------------- */
+function openCartPanel(){ cartPanel.style.display = 'block'; }
+function closeCartPanel(){ cartPanel.style.display = 'none'; }
+document.getElementById('cartPanelClose').addEventListener('click', closeCartPanel);
+document.getElementById('btnCart').addEventListener('click', ()=>{ openCartPanel(); });
+
+document.getElementById('cartPanelCheckout').addEventListener('click', ()=> {
+  if(cart.length===0){ showTiny('Tu carrito está vacío'); return; }
+  openPaymentModal();
+});
+
+function openPaymentModal(){
+  document.getElementById('paymentBackdrop').style.display='flex';
+  // clear fields
+  document.getElementById('pay_name').value=''; document.getElementById('pay_number').value='';
+  document.getElementById('pay_exp').value=''; document.getElementById('pay_cvv').value='';
+}
+document.getElementById('payCancel').addEventListener('click', ()=> document.getElementById('paymentBackdrop').style.display='none');
+
+document.getElementById('payConfirm').addEventListener('click', ()=>{
+  const name = document.getElementById('pay_name').value.trim();
+  const number = document.getElementById('pay_number').value.replace(/\s/g,'');
+  const exp = document.getElementById('pay_exp').value.trim();
+  const cvv = document.getElementById('pay_cvv').value.trim();
+  if(name.length<2){ showTiny('Nombre inválido'); return; }
+  if(!/^\d{16}$/.test(number)){ showTiny('Número de tarjeta debe tener 16 dígitos'); return; }
+  if(!/^\d{2}\/\d{2}$/.test(exp)){ showTiny('Fecha debe tener formato MM/AA'); return; }
+  if(!/^\d{3,4}$/.test(cvv)){ showTiny('CVV inválido'); return; }
+
+  // process (simulate)
+  document.getElementById('paymentBackdrop').style.display='none';
+  // build order
+  const total = cart.reduce((s,i)=>s + i.price*i.qty,0);
+  const order = {
+    id: 'ORD' + Date.now().toString().slice(-6),
+    items: JSON.parse(JSON.stringify(cart)),
+    total,
+    t: Date.now(),
+    payer_name: name
+  };
+  orders.push(order);
+  localStorage.setItem('nexo_orders', JSON.stringify(orders));
+  // clear cart
+  clearCart();
+  // show confirmation
+  document.getElementById('orderMsg').textContent = `Gracias por tu compra. Pedido ${order.id} guardado localmente. Pronto te contactaremos.`;
+  document.getElementById('orderBackdrop').style.display = 'flex';
+  renderOrders();
+});
+
+document.getElementById('orderOk').addEventListener('click', ()=> document.getElementById('orderBackdrop').style.display='none');
+
+/* -------------------------
+   Small UI helpers & interactions
+   ------------------------- */
+function showTiny(msg, time=2000){
+  const el = document.createElement('div'); el.textContent = msg;
+  el.style.position='fixed'; el.style.left='50%'; el.style.transform='translateX(-50%)';
+  el.style.bottom='26px'; el.style.background='rgba(255,255,255,0.06)'; el.style.color='var(--text)';
+  el.style.padding='10px 14px'; el.style.borderRadius='10px'; el.style.zIndex='120';
+  document.body.appendChild(el);
+  setTimeout(()=> el.remove(), time);
+}
+
+/* -------------------------
+   Editor events
+   ------------------------- */
+document.getElementById('c_apply').addEventListener('click', ()=>{
+  const t = document.getElementById('c_title').value.trim() || 'Para ti';
+  const m = document.getElementById('c_msg').value.trim() || '';
+  document.getElementById('previewTitle').textContent = t;
+  document.getElementById('previewMsg').textContent = m || 'Tu mensaje aparecerá aquí...';
+  showTiny('Previsualización actualizada');
+});
+
+document.getElementById('c_reset').addEventListener('click', ()=>{
+  document.getElementById('c_title').value=''; document.getElementById('c_msg').value=''; document.getElementById('c_type').value='romantica';
+  document.getElementById('previewTitle').textContent = 'Para ti';
+  document.getElementById('previewMsg').textContent = 'Tu mensaje aparecerá aquí...';
+  showTiny('Editor restablecido');
+});
+
+document.getElementById('previewToGallery').addEventListener('click', savePreviewToGallery);
+document.getElementById('previewDownload').addEventListener('click', ()=>{
+  // simple SVG download of preview
+  const title = document.getElementById('previewTitle').textContent;
+  const msg = document.getElementById('previewMsg').textContent;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="520">
+    <foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" style="font-family:Arial;padding:32px;background:#0b1220;color:#e6eef8">
+      <h2 style="color:#10b981;margin:0">${escapeHtml(title)}</h2>
+      <p style="color:#94a3b8;white-space:pre-wrap">${escapeHtml(msg)}</p>
+      <div style="text-align:right;color:#94a3b8;margin-top:20px">— Jesús</div>
+    </div></foreignObject></svg>`;
+  const blob = new Blob([svg], {type:'image/svg+xml'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href=url; a.download='dedicatoria.svg'; a.click(); URL.revokeObjectURL(url);
+});
+
+/* -------------------------
+   Orders & Gallery helpers
+   ------------------------- */
+function deleteGallery(index){
+  if(!confirm('Eliminar dedicatoria?')) return;
+  gallery.splice(index,1);
+  localStorage.setItem('nexo_gallery', JSON.stringify(gallery));
+  renderGallery();
+}
+
+function shareItem(index){
+  const it = gallery[index];
+  if(!it) return;
+  const txt = `${it.title}\n\n${it.msg}\n\n— Jesús`;
+  navigator.clipboard?.writeText(txt).then(()=> alert('Dedicatoria copiada al portapapeles.'));
+}
+
+/* -------------------------
+   Navigation / tab switch
+   ------------------------- */
+const tabs = document.querySelectorAll('#topNav button[data-tab]');
+tabs.forEach(btn=>{
+  btn.addEventListener('click', ()=> {
+    tabs.forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab-panel').forEach(p=>p.style.display='none');
+    document.getElementById('tab-' + tab).style.display = 'block';
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+});
+document.querySelector('#topNav button[data-tab="store"]').click();
+
+document.getElementById('miniView').addEventListener('click', ()=> {
+  document.querySelector('#topNav button[data-tab="store"]').click();
+  document.getElementById('tab-cart').style.display='block';
+  document.getElementById('tab-store').style.display='none';
+  renderCartMain();
+});
+document.getElementById('miniCheckout').addEventListener('click', ()=> {
+  openPaymentModal();
+});
+
+/* -------------------------
+   Quick actions
+   ------------------------- */
+document.getElementById('newTemplateBtn').addEventListener('click', ()=> {
+  document.querySelector('#topNav button[data-tab="carta"]').click();
+  document.getElementById('c_title').value = ''; document.getElementById('c_msg').value = '';
+  document.getElementById('c_apply').click();
+});
+document.getElementById('openGalleryBtn').addEventListener('click', ()=> {
+  document.querySelector('#topNav button[data-tab="galeria"]').click();
+});
+
+/* -------------------------
+   Init render & load
+   ------------------------- */
+function init(){
+  renderProducts();
+  renderTemplates();
+  renderCartPanel();
+  renderGallery();
+  renderOrders();
+  renderMiniCart();
+}
+init();
+
+/* -------------------------
+   Expose some functions to inline (if needed)
+   ------------------------- */
+window.addToCart = addToCart;
+window.applyTemplate = applyTemplate;
+window.addTemplateProduct = addTemplateProduct;
+window.changeQty = changeQty;
+window.removeFromCart = removeFromCart;
+window.deleteGallery = deleteGallery;
+window.shareItem = shareItem;
+</script>
+</body>
+</html>
